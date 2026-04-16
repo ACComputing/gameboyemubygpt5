@@ -5,15 +5,18 @@ GB_WIDTH = 160
 GB_HEIGHT = 144
 SCALE = 3
 
-BG = "#0b0f14"
-PANEL = "#111a24"
-ACCENT = "#00aaff"
-TEXT = "#cfe9ff"
+BG = "#1a1a1a"
+PANEL = "#2a2a2a"
+ACCENT = "#4aa3ff"
+TEXT = "#e6e6e6"
 
 
 # ===================== CPU =====================
 class CPU:
     def __init__(self):
+        self.reset()
+
+    def reset(self):
         self.memory = [0] * 0x10000
         self.PC = 0x0100
         self.halted = False
@@ -21,7 +24,7 @@ class CPU:
         self.ppu = PPU(self)
 
     def load_rom(self, path):
-        self.__init__()
+        self.reset()
         with open(path, "rb") as f:
             rom = f.read()
         for i in range(len(rom)):
@@ -66,8 +69,9 @@ class PPU:
 
     def render(self):
         for y in range(GB_HEIGHT):
+            base = y * GB_WIDTH
             for x in range(GB_WIDTH):
-                self.framebuffer[x + y * GB_WIDTH] = (x ^ y) & 1
+                self.framebuffer[base + x] = (x ^ y) & 1
 
 
 # ===================== GUI =====================
@@ -77,41 +81,42 @@ class ChatGPTGameBoyEmulator:
         self.cpu = CPU()
         self.running = False
 
-        # ===== TITLE (REBRANDED) =====
-        self.root.title("ChatGPT's GameBoy Emulator by A.C and ChatGPT")
-        self.root.geometry("950x700")
+        # ✔ UPDATED TITLE HERE
+        self.root.title("A.C + ChatGPT's GameBoy Emulator 0.1")
+
+        self.root.geometry("980x720")
         self.root.configure(bg=BG)
 
-        # ===== MENU =====
-        menubar = tk.Menu(root)
+        # MENU
+        menu = tk.Menu(root)
 
-        filemenu = tk.Menu(menubar, tearoff=0)
+        filemenu = tk.Menu(menu, tearoff=0)
         filemenu.add_command(label="Load ROM", command=self.load_rom)
         filemenu.add_separator()
         filemenu.add_command(label="Exit", command=root.quit)
-        menubar.add_cascade(label="File", menu=filemenu)
+        menu.add_cascade(label="File", menu=filemenu)
 
-        emumenu = tk.Menu(menubar, tearoff=0)
-        emumenu.add_command(label="Start", command=self.start)
-        emumenu.add_command(label="Pause", command=self.pause)
-        emumenu.add_command(label="Reset", command=self.reset)
-        menubar.add_cascade(label="Emulation", menu=emumenu)
+        emu = tk.Menu(menu, tearoff=0)
+        emu.add_command(label="Run", command=self.start)
+        emu.add_command(label="Pause", command=self.pause)
+        emu.add_command(label="Reset", command=self.reset)
+        menu.add_cascade(label="Emulation", menu=emu)
 
-        helpmenu = tk.Menu(menubar, tearoff=0)
+        helpmenu = tk.Menu(menu, tearoff=0)
         helpmenu.add_command(label="About", command=self.about)
-        menubar.add_cascade(label="Help", menu=helpmenu)
+        menu.add_cascade(label="Help", menu=helpmenu)
 
-        root.config(menu=menubar)
+        root.config(menu=menu)
 
-        # ===== LAYOUT =====
+        # LAYOUT
         self.main = tk.Frame(root, bg=BG)
         self.main.pack(expand=True, fill="both")
 
-        self.screen_frame = tk.Frame(self.main, bg=PANEL, padx=10, pady=10)
-        self.screen_frame.pack(side="left", padx=20, pady=20)
+        self.screen = tk.Frame(self.main, bg=PANEL)
+        self.screen.pack(side="left", padx=25, pady=25)
 
         self.canvas = tk.Canvas(
-            self.screen_frame,
+            self.screen,
             width=GB_WIDTH * SCALE,
             height=GB_HEIGHT * SCALE,
             bg="black",
@@ -121,27 +126,27 @@ class ChatGPTGameBoyEmulator:
         self.canvas.pack()
 
         self.side = tk.Frame(self.main, bg=PANEL, width=220)
-        self.side.pack(side="right", fill="y", padx=20, pady=20)
+        self.side.pack(side="right", fill="y", padx=25, pady=25)
 
         tk.Label(
             self.side,
             text="ChatGPT GAMEBOY",
             bg=PANEL,
             fg=ACCENT,
-            font=("Courier", 16, "bold")
+            font=("Courier", 14, "bold")
         ).pack(pady=10)
 
-        self.status = tk.Label(self.side, text="Status: Idle", bg=PANEL, fg=TEXT)
+        self.status = tk.Label(self.side, text="Idle", bg=PANEL, fg=TEXT)
         self.status.pack(pady=10)
 
-        self.make_button("Start", self.start)
+        self.make_button("Run", self.start)
         self.make_button("Pause", self.pause)
         self.make_button("Reset", self.reset)
 
         self.footer = tk.Label(
             root,
-            text="ChatGPT's GameBoy Emulator | by A.C and ChatGPT | [C]1999-2026 A.C Holding",
-            bg="#081018",
+            text="A.C + ChatGPT GameBoy Emulator 0.1",
+            bg="#111",
             fg=ACCENT,
             anchor="w"
         )
@@ -149,21 +154,17 @@ class ChatGPTGameBoyEmulator:
 
         self.loop()
 
-    # ===== BUTTONS =====
     def make_button(self, text, cmd):
         tk.Button(
             self.side,
             text=text,
             command=cmd,
-            bg="#0d2233",
-            fg=ACCENT,
-            activebackground="#123a55",
-            activeforeground="white",
+            bg="#333",
+            fg=TEXT,
             relief="flat",
             width=18
         ).pack(pady=5)
 
-    # ===== ACTIONS =====
     def load_rom(self):
         path = filedialog.askopenfilename()
         if path:
@@ -185,19 +186,17 @@ class ChatGPTGameBoyEmulator:
     def about(self):
         messagebox.showinfo(
             "About",
-            "ChatGPT's GameBoy Emulator\n"
-            "by A.C and ChatGPT\n"
-            "[C]1999-2026 A.C Holding"
+            "A.C + ChatGPT's GameBoy Emulator 0.1"
         )
 
-    # ===== RENDER =====
     def draw(self):
         self.canvas.delete("all")
         fb = self.cpu.ppu.framebuffer
 
         for y in range(GB_HEIGHT):
+            base = y * GB_WIDTH
             for x in range(GB_WIDTH):
-                if fb[x + y * GB_WIDTH]:
+                if fb[base + x]:
                     self.canvas.create_rectangle(
                         x*SCALE, y*SCALE,
                         (x+1)*SCALE, (y+1)*SCALE,
@@ -205,7 +204,6 @@ class ChatGPTGameBoyEmulator:
                         outline=""
                     )
 
-    # ===== LOOP =====
     def loop(self):
         if self.running:
             for _ in range(250):
@@ -217,5 +215,5 @@ class ChatGPTGameBoyEmulator:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = ChatGPTGameBoyEmulator(root)
+    ChatGPTGameBoyEmulator(root)
     root.mainloop()
